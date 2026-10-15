@@ -7,6 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use App\Models\Animal;
 use Illuminate\View\View;
 use App\Models\Shelter;
+use App\Enums\Species;
+use Illuminate\Validation\Rule;
 
 class AnimalController extends Controller
 {
@@ -43,13 +45,15 @@ public function create(): View
 
 public function store(Request $request): RedirectResponse
 {
-    $animal = Animal::create($request->only([
-        'name',
-        'species',
-        'shelter_id',
-        'birth_date',
-        'description',
-    ]));
+  $validated = $request->validate([
+    'name' => ['required', 'string', 'max:50'],
+        'species' => ['required', Rule::enum(Species::class)],
+         'shelter_id' => ['required', 'integer', 'exists:shelters,id'],
+          'birth_date' => ['nullable', 'date', 'before_or_equal:today'],
+          'description' => ['nullable', 'string', 'max:1000'],
+]);
+
+    $animal = Animal::create($validated);
 
     return redirect()
         ->route('animals.show', $animal->id)
